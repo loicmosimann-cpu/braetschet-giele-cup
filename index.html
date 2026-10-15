@@ -1,0 +1,106 @@
+<!doctype html><html lang="de-CH"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brätschet Giele Cup</title><style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#eef3ff;background:#0b1020}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#203355,#0b1020 65%);min-height:100vh}main{max-width:1180px;margin:auto;padding:35px 18px 80px}h1{font-size:clamp(30px,5vw,54px);margin:0}p{color:#a9b7d2}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.tag{color:#80e6c0;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:12px}.panel{background:#151f34e8;border:1px solid #34415d;border-radius:18px;padding:20px;margin-top:22px;box-shadow:0 12px 35px #0002}.panel h2{margin:0 0 15px;font-size:21px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}button{cursor:pointer;border:1px solid #43516d;background:#263652;color:#fff;border-radius:10px;padding:10px 14px;font-weight:650}button:hover{background:#36527c}.primary{background:#19a77f;border-color:#19a77f;color:#061a17}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.stat{background:#16233a;border:1px solid #34415d;padding:17px;border-radius:14px}.stat strong{display:block;font-size:27px}.stat span{font-size:13px;color:#a9b7d2}.matches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.match{border:1px solid #354563;border-radius:13px;padding:14px;background:#111b30}.meta{display:flex;justify-content:space-between;color:#9eafca;font-size:12px;margin-bottom:12px}.versus{display:flex;align-items:center;justify-content:space-between;gap:7px}.team{font-weight:700;flex:1;min-width:0}.team:last-child{text-align:right}.score{display:flex;gap:5px;align-items:center}.score input{width:48px;padding:9px 3px;text-align:center;border-radius:9px;border:1px solid #506280;background:#0b1324;color:white;font-size:19px;font-weight:800}.score input:focus{outline:2px solid #19a77f}.muted{color:#7284a4}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:640px}th,td{padding:12px 10px;text-align:right;border-bottom:1px solid #2c3a53;white-space:nowrap}th{color:#9cacc9;font-size:12px}td:nth-child(2),th:nth-child(2){text-align:left}tbody tr:first-child{background:#17463f77}tbody tr:hover{background:#263954} .pill{border-radius:7px;padding:4px 8px;background:#29416b;font-size:12px}.note{font-size:12px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.tabs{display:flex;gap:7px;flex-wrap:wrap}.tabs button.active{background:#19a77f;color:#071a17;border-color:#19a77f}@media(max-width:760px){.matches{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:12px}.stat strong{font-size:21px}}
+
+.authbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.authbar input{padding:10px;border-radius:9px;border:1px solid #506280;background:#0b1324;color:white;max-width:220px}
+#status{font-size:13px;color:#a9b7d2}
+.score input:disabled{opacity:.7;cursor:default}
+</style></head><body><main><header class="top"><div><div class="tag">Turnier-Dashboard</div><h1>⚽ Brätschet Giele Cup</h1><p>Spielplan, Live-Resultate und automatische Rangliste</p></div><div class="toolbar"><button id="loginToggle" onclick="toggleLogin()">🔐 Admin-Login</button><button id="logout" hidden onclick="logout()">Abmelden</button><button id="reset" hidden onclick="resetScores()">Zurücksetzen</button></div></header><div id="loginBox" class="panel" hidden><h2>Administrator anmelden</h2><div class="authbar"><input id="email" type="email" autocomplete="username" placeholder="Admin-E-Mail"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort"><button class="primary" onclick="login()">Anmelden</button></div></div><p id="status" role="status">Verbindung wird hergestellt …</p><div class="stats"><div class="stat"><strong id="played">0 / 20</strong><span>Spiele abgeschlossen</span></div><div class="stat"><strong id="goals">0</strong><span>Tore insgesamt</span></div><div class="stat"><strong id="progress">0 %</strong><span>Fortschritt</span></div></div><section class="panel"><div class="section-title"><h2>🏆 Rangliste</h2><span class="note">GP = Spiele · P = Punkte · G = Tore · GA = Gegentore · TD = Tordifferenz</span></div><div class="tablewrap"><table><thead><tr><th>Rang</th><th>Spieler</th><th>GP</th><th>P</th><th>G</th><th>GA</th><th>TD</th><th>Mögliche P</th><th>Status</th></tr></thead><tbody id="ranking"></tbody></table></div><p class="note">Sortierung nach Punkten, Tordifferenz und erzielten Toren. «Mögliche P» entspricht den aktuellen Punkten plus 3 pro noch ausstehendem Spiel.</p></section><section class="panel"><div class="section-title"><h2>🎮 Spielplan & Resultate</h2><div class="tabs"><button class="active" data-filter="all" onclick="setFilter('all')">Alle</button><button data-filter="stube" onclick="setFilter('2v2')">Stube</button><button data-filter="zimmer" onclick="setFilter('1v1')">Zimmer</button><button data-filter="open" onclick="setFilter('open')">Offen</button></div></div><div id="matches" class="matches"></div><p class="note">Alle Besucher sehen dieselben Resultate. Nur der freigeschaltete Administrator kann sie ändern.</p></section></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script>const fixtures=[{"id": "a5", "time": "19:00", "mode": "stube", "teams": [["Domi", "Leon"], ["Jorim"]]}, {"id": "b5", "time": "19:00", "mode": "zimmer", "teams": [["Glen"], ["Loïc"]]}, {"id": "a6", "time": "19:12", "mode": "stube", "teams": [["Leon", "Loïc"], ["Glen"]]}, {"id": "b6", "time": "19:12", "mode": "zimmer", "teams": [["Jorim"], ["Domi"]]}, {"id": "a7", "time": "19:24", "mode": "stube", "teams": [["Domi", "Jorim"], ["Loïc"]]}, {"id": "b7", "time": "19:24", "mode": "zimmer", "teams": [["Leon"], ["Glen"]]}, {"id": "a8", "time": "19:36", "mode": "stube", "teams": [["Leon", "Glen"], ["Domi"]]}, {"id": "b8", "time": "19:36", "mode": "zimmer", "teams": [["Loïc"], ["Jorim"]]}, {"id": "a9", "time": "19:48", "mode": "stube", "teams": [["Glen", "Loïc"], ["Jorim"]]}, {"id": "b9", "time": "19:48", "mode": "zimmer", "teams": [["Domi"], ["Leon"]]}, {"id": "a10", "time": "20:00", "mode": "stube", "teams": [["Domi", "Loïc"], ["Leon"]]}, {"id": "b10", "time": "20:00", "mode": "zimmer", "teams": [["Jorim"], ["Glen"]]}, {"id": "a11", "time": "20:12", "mode": "stube", "teams": [["Jorim", "Leon"], ["Glen"]]}, {"id": "b11", "time": "20:12", "mode": "zimmer", "teams": [["Domi"], ["Loïc"]]}, {"id": "a12", "time": "20:24", "mode": "stube", "teams": [["Domi", "Glen"], ["Loïc"]]}, {"id": "b12", "time": "20:24", "mode": "zimmer", "teams": [["Leon"], ["Jorim"]]}, {"id": "a13", "time": "20:36", "mode": "stube", "teams": [["Jorim", "Loïc"], ["Leon"]]}, {"id": "b13", "time": "20:36", "mode": "zimmer", "teams": [["Glen"], ["Domi"]]}, {"id": "a14", "time": "20:48", "mode": "stube", "teams": [["Jorim", "Glen"], ["Domi"]]}, {"id": "b14", "time": "20:48", "mode": "zimmer", "teams": [["Loïc"], ["Leon"]]}];const players=['Domi','Jorim','Leon','Glen','Loïc'];
+// Supabase-Projektdaten aus config.js (öffentlich verwendbarer anon/publishable key)
+const client = supabase.createClient(window.CUP_CONFIG?.url || '',window.CUP_CONFIG?.anonKey || '');
+let scores={},filter='all',isAdmin=false,ready=false,refreshing=false;
+const $=id=>document.getElementById(id);
+function status(msg){$('status').textContent=msg}
+function valid(v){return v!==''&&v!==null&&v!==undefined&&Number.isInteger(Number(v))&&Number(v)>=0&&Number(v)<=999}
+function complete(m){let x=scores[m.id]||{};return valid(x.a)&&valid(x.b)}
+function toggleLogin(){$('loginBox').hidden=!$('loginBox').hidden}
+async function checkAdmin(){
+  const {data:{user}}=await client.auth.getUser();
+  if(!user){isAdmin=false}else{
+    const {data,error}=await client.from('cup_admins').select('user_id').eq('user_id',user.id).maybeSingle();
+    isAdmin=!!data&&!error;
+  }
+  $('loginToggle').hidden=isAdmin;
+  $('logout').hidden=!user;
+  $('reset').hidden=!isAdmin;
+  $('loginBox').hidden=true;
+  render();
+}
+async function login(){
+  const email=$('email').value.trim(),password=$('password').value;
+  if(!email||!password){status('Bitte E-Mail und Passwort eingeben.');return}
+  const {error}=await client.auth.signInWithPassword({email,password});
+  $('password').value='';
+  if(error){status('Anmeldung fehlgeschlagen: '+error.message);return}
+  await checkAdmin();
+  status(isAdmin?'Als Administrator angemeldet.':'Dieses Konto hat keine Bearbeitungsrechte.');
+}
+async function logout(){await client.auth.signOut();await checkAdmin();status('Abgemeldet. Öffentliche Ansicht.')}
+async function loadScores(silent=false){
+  if(refreshing)return;refreshing=true;
+  try{
+    const {data,error}=await client.from('cup_results').select('match_id,score_a,score_b');
+    if(error)throw error;
+    const next={};
+    for(const r of data)if(fixtures.some(m=>m.id===r.match_id))next[r.match_id]={a:r.score_a===null?'':String(r.score_a),b:r.score_b===null?'':String(r.score_b)};
+    // Do not replace a score currently being edited by the admin.
+    if(!document.activeElement?.matches('.score input')){scores=next;render()}
+    ready=true;if(!silent)status('Live-Daten geladen · '+(isAdmin?'Administrator':'Nur lesen'));
+  }catch(e){status('Verbindungsfehler: '+e.message)}
+  finally{refreshing=false}
+}
+async function setScore(id,side,value){
+  if(!isAdmin||!ready)return;
+  if(value!==''&&!valid(value)){status('Bitte eine ganze Zahl zwischen 0 und 999 eingeben.');render();return}
+  const old={...(scores[id]||{})},next={...old,[side]:value};
+  // Send both score columns in one upsert, with database RLS as authoritative guard.
+  const row={match_id:id,score_a:valid(next.a)?Number(next.a):null,score_b:valid(next.b)?Number(next.b):null};
+  scores[id]=next;render();status('Speichern …');
+  const {error}=await client.from('cup_results').upsert(row,{onConflict:'match_id'});
+  if(error){scores[id]=old;render();status('Nicht gespeichert: '+error.message)}
+  else{status('Resultat gespeichert.');await loadScores(true)}
+}
+async function resetScores(){
+  if(!isAdmin||!confirm('Wirklich alle Resultate für alle Besucher löschen?'))return;
+  const {error}=await client.from('cup_results').delete().neq('match_id','');
+  if(error)status('Fehler: '+error.message);else await loadScores();
+}
+function setFilter(f){filter=f;document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));render()}
+function render(){
+  let completed=fixtures.filter(complete);
+  $('played').textContent=completed.length+' / '+fixtures.length;
+  $('goals').textContent=completed.reduce((n,m)=>n+Number(scores[m.id].a)+Number(scores[m.id].b),0);
+  $('progress').textContent=Math.round(100*completed.length/fixtures.length)+' %';
+  let st=Object.fromEntries(players.map(n=>[n,{name:n,gp:0,p:0,g:0,ga:0,td:0,total:0}]));
+  for(let m of fixtures){
+    for(let team of m.teams)for(let name of team)if(st[name])st[name].total++;
+    if(!complete(m))continue;
+    let a=+scores[m.id].a,b=+scores[m.id].b;
+    m.teams.forEach((team,i)=>team.forEach(name=>{
+      if(!st[name])return;
+      let x=st[name],own=i===0?a:b,opp=i===0?b:a;
+      x.gp++;x.g+=own;x.ga+=opp;x.p+=own>opp?3:own===opp?1:0;
+    }));
+  }
+  let rows=Object.values(st);
+  rows.forEach(x=>{x.td=x.g-x.ga;x.max=x.p+3*(x.total-x.gp)});
+  rows.sort((a,b)=>b.p-a.p||b.td-a.td||b.g-a.g||a.name.localeCompare(b.name));
+  $('ranking').innerHTML=rows.map((x,i)=>`<tr><td><b>${i+1}</b></td><td><b>${x.name}</b></td><td>${x.gp}</td><td><b>${x.p}</b></td><td>${x.g}</td><td>${x.ga}</td><td>${x.td>0?'+':''}${x.td}</td><td>${x.max}</td><td><span class="pill">${rows.filter(y=>y!==x&&y.max>x.p).length<=1?'Fix*':'Offen'}</span></td></tr>`).join('');
+  let list=fixtures.filter(m=>filter==='all'||m.mode===filter||(filter==='open'&&!complete(m)));
+  $('matches').innerHTML=list.map(m=>{
+    let x=scores[m.id]||{};
+    return `<div class="match"><div class="meta"><span>${m.time} Uhr · ${m.mode==='stube'?'Stube · 2 gegen 1':'Zimmer · 1 gegen 1'}</span><span>${complete(m)?'✓ Gespielt':'○ Offen'}</span></div><div class="versus"><span class="team">${m.teams[0].join(' & ')}</span><div class="score"><input type="number" min="0" max="999" step="1" ${isAdmin?'':'disabled'} aria-label="Tore ${m.teams[0].join(' ')}" value="${x.a??''}" data-id="${m.id}" data-side="a"><span class="muted">:</span><input type="number" min="0" max="999" step="1" ${isAdmin?'':'disabled'} aria-label="Tore ${m.teams[1].join(' ')}" value="${x.b??''}" data-id="${m.id}" data-side="b"></div><span class="team">${m.teams[1].join(' & ')}</span></div></div>`;
+  }).join('');
+  document.querySelectorAll('.score input').forEach(el=>el.addEventListener('change',()=>setScore(el.dataset.id,el.dataset.side,el.value)));
+}
+async function init(){
+  if(!window.CUP_CONFIG?.url||!window.CUP_CONFIG?.anonKey||window.CUP_CONFIG.url.includes('DEIN-PROJEKT')){
+    status('Bitte zuerst config.js mit deinen Supabase-Projektdaten ausfüllen.');return;
+  }
+  await checkAdmin();await loadScores();
+  // Simple robust multi-device synchronization, without enabling replication.
+  setInterval(()=>{if(!document.hidden)loadScores(true)},10000);
+  client.auth.onAuthStateChange(()=>{setTimeout(checkAdmin,0)});
+}
+render();init();
+</script></body></html>
